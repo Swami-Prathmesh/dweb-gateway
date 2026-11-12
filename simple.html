@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dweb-gateway &middot; the web that can't be quietly changed</title>
+<style>
+  :root {
+    --font-body: "IBM Plex Sans", "Segoe UI", ui-sans-serif, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --bg: #eef1f2;
+    --grid: rgba(16, 32, 43, 0.05);
+    --surface: #f9fbfb;
+    --surface-2: #e7ecec;
+    --border: rgba(16, 32, 43, 0.13);
+    --border-strong: rgba(16, 32, 43, 0.28);
+    --text: #10202b;
+    --text-dim: #55676f;
+    --primary: #0f6b63;
+    --primary-dim: #d9ece9;
+    --amber: #9a5b06;
+    --amber-dim: #f6e7cd;
+    --danger: #97231f;
+    --danger-dim: #f7dedd;
+    --ok: #2f6b3a;
+    --ok-dim: #dcead9;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16, 32, 43, 0.06), 0 14px 34px -22px rgba(16, 32, 43, 0.55);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1418;
+      --grid: rgba(223, 233, 231, 0.05);
+      --surface: #111e23;
+      --surface-2: #16262c;
+      --border: rgba(223, 233, 231, 0.13);
+      --border-strong: rgba(223, 233, 231, 0.3);
+      --text: #e3ecea;
+      --text-dim: #94a8ad;
+      --primary: #57c3b6;
+      --primary-dim: #10322f;
+      --amber: #e2ab55;
+      --amber-dim: #2c2314;
+      --danger: #e88b84;
+      --danger-dim: #2e1a19;
+      --ok: #8fc79a;
+      --ok-dim: #162a1a;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 34px -24px rgba(0, 0, 0, 0.9);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--text);
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 30px 30px, 30px 30px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 46px 22px 80px; }
+  a { color: var(--primary); text-underline-offset: 3px; }
+  code { font-family: var(--font-mono); font-size: .9em; }
+
+  header { margin-bottom: 34px; }
+  .kicker {
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--primary); margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.7rem); line-height: 1.1; margin: 0 0 14px; letter-spacing: -0.022em; }
+  .lede { font-size: 16.5px; color: var(--text-dim); margin: 0; max-width: 60ch; }
+
+  .step {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 24px; margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .step__top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  .step__n {
+    font-family: var(--font-mono); font-size: 11px; color: var(--primary);
+    border: 1px solid var(--border-strong); border-radius: 50%;
+    width: 24px; height: 24px; display: grid; place-items: center; flex: none;
+  }
+  .step h2 { font-size: 17.5px; margin: 0; letter-spacing: -0.015em; }
+  .step p { margin: 6px 0 16px; color: var(--text-dim); font-size: 14.5px; }
+  .step p:last-child { margin-bottom: 0; }
+
+  button {
+    font-family: var(--font-body); font-size: 14px; font-weight: 500;
+    padding: 11px 18px; border-radius: 9px; cursor: pointer;
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+    transition: background .14s ease, transform .1s ease, filter .14s ease;
+  }
+  button:hover { background: var(--surface-2); }
+  button:active { transform: translateY(1px); }
+  button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  button.primary:hover { filter: brightness(1.09); }
+  @media (prefers-color-scheme: dark) { button.primary { color: #07100f; } }
+  button.ghost { background: transparent; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  textarea {
+    width: 100%; min-height: 92px; padding: 12px 14px; margin-bottom: 12px;
+    font-family: var(--font-body); font-size: 14.5px; line-height: 1.6;
+    color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 9px; resize: vertical;
+  }
+  textarea:focus { outline: 2px solid var(--primary-dim); border-color: var(--primary); }
+
+  .frame {
+    margin-top: 14px; border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; background: #fff;
+  }
+  .frame iframe { display: block; width: 100%; height: 330px; border: 0; }
+  .frame--hidden { display: none; }
+
+  .result {
+    margin-top: 14px; padding: 13px 15px; border-radius: 9px;
+    font-size: 14px; background: var(--surface-2); border: 1px solid var(--border);
+  }
+  .result--ok { background: var(--ok-dim); border-color: transparent; }
+  .result--bad { background: var(--danger-dim); border-color: transparent; }
+  .result--note { background: var(--amber-dim); border-color: transparent; }
+  .result strong { display: block; margin-bottom: 3px; }
+  .result .mono { font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+
+  details { margin-top: 26px; }
+  summary {
+    cursor: pointer; font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--text-dim); letter-spacing: .04em; text-transform: uppercase;
+  }
+  details p { font-size: 14px; color: var(--text-dim); }
+
+  footer {
+    margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border);
+    font-size: 13px; color: var(--text-dim);
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .pill {
+    display: inline-block; font-family: var(--font-mono); font-size: 10.5px;
+    padding: 2px 7px; border-radius: 4px; background: var(--primary-dim); color: var(--primary);
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">a working demo &middot; nothing to install</div>
+    <h1>The web, except nobody can quietly change the page you are reading.</h1>
+    <p class="lede">
+      Normally a page lives at an address like <em>example.com/about</em>, and whoever
+      runs that address can swap the contents whenever they like. Here, a page's address
+      is a fingerprint of the page itself. Change one letter, and the address no longer
+      matches &mdash; so what you read is what was published.
+    </p>
+  </header>
+
+  <section class="step">
+    <div class="step__top"><div class="step__n">1</div><h2>Open a page that lives at its own fingerprint</h2></div>
+    <p>
+      This example site is two files &mdash; a page and its stylesheet. Each has its own
+      fingerprint, and the site as a whole has one too. Nobody is hosting it in the usual
+      sense; it is fetched by what it is.
+    </p>
+    <div class="row">
+      <button class="primary" id="open-site">Show me the example site</button>
+      <button class="ghost" id="close-site" hidden>Hide it</button>
+    </div>
+    <div class="frame frame--hidden" id="site-frame"><iframe id="site-iframe" sandbox="" title="example site"></iframe></div>
+  </section>
+
+  <section class="step">
+    <div class="step__top"><div class="step__n">2</div><h2>Share something of your own</h2></div>
+    <p>
+      Write a note and publish it. You get back a link that works for anyone who has this
+      demo running &mdash; and that link is tied to your exact words. Edit a word later and
+      it becomes a different link, while the old one keeps showing the original.
+    </p>
+    <textarea id="note" spellcheck="true">Hello from the decentralized web.</textarea>
+    <div class="row"><button class="primary" id="publish">Publish this note</button></div>
+    <div id="publish-result"></div>
+  </section>
+
+  <section class="step">
+    <div class="step__top"><div class="step__n">3</div><h2>See how a takedown actually works</h2></div>
+    <p>
+      A gateway is a public service, so it has to answer for what it hands out. Below is a
+      stand-in page. Report it, and the gateway stops serving it &mdash; the page is not
+      deleted, it just stops being available from here. That is the whole mechanism, and
+      it is worth seeing once.
+    </p>
+    <div class="row">
+      <button id="report">Report this page</button>
+      <button id="try-again" disabled>Try to open it again</button>
+    </div>
+    <div id="abuse-result"></div>
+  </section>
+
+  <details>
+    <summary>What is actually going on here</summary>
+    <p>
+      Every piece of content is hashed &mdash; boiled down to a short fingerprint &mdash; and
+      that fingerprint becomes its address. Ask a gateway for an address and it fetches the
+      content, recomputes the fingerprint, and refuses to serve anything that does not match.
+      So the gateway cannot lie to you about what a page says, and a takedown can only ever
+      mean "this gateway declines to serve it", never "this content no longer exists".
+    </p>
+    <p>
+      This demo runs entirely on your own machine: the pages are stored in a folder next to
+      the program, and there is no network of other computers involved. The fingerprints,
+      the verification and the takedown behaviour are real; the peer-to-peer part is not.
+    </p>
+  </details>
+
+  <footer>
+    <span><span class="pill">local</span> &nbsp;running on <span id="where">this machine</span></span>
+    <span><a href="/panel">Technical view &rarr;</a> &nbsp;&middot;&nbsp; <a href="/README.md" target="_blank" rel="noopener">Read the docs</a></span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  $("where").textContent = location.host;
+
+  function show(container, kind, title, body, extra) {
+    const box = document.createElement("div");
+    box.className = "result " + kind;
+    const head = document.createElement("strong");
+    head.textContent = title;
+    box.appendChild(head);
+    if (body) {
+      const text = document.createElement("div");
+      text.textContent = body;
+      box.appendChild(text);
+    }
+    if (extra) box.appendChild(extra);
+    container.textContent = "";
+    container.appendChild(box);
+    return box;
+  }
+
+  function link(url, label) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.textContent = label;
+    a.style.fontSize = "13.5px";
+    return a;
+  }
+
+  /* --- 1: the example site --- */
+  let rootCid = null;
+  fetch("/api/blocks")
+    .then((res) => res.json())
+    .then((data) => {
+      const site = data.blocks.find((b) => b.content_type === "application/vnd.dweb.dir+json");
+      if (site) rootCid = site.cid;
+    })
+    .catch(() => {});
+
+  $("open-site").onclick = () => {
+    if (!rootCid) return;
+    $("site-iframe").src = "/ipfs/" + rootCid + "/";
+    $("site-frame").classList.remove("frame--hidden");
+    $("close-site").hidden = false;
+  };
+  $("close-site").onclick = () => {
+    $("site-frame").classList.add("frame--hidden");
+    $("site-iframe").src = "about:blank";
+    $("close-site").hidden = true;
+  };
+
+  /* --- 2: publish a note --- */
+  $("publish").onclick = async () => {
+    const text = $("note").value;
+    if (!text.trim()) {
+      show($("publish-result"), "result--note", "Write something first", "The note is empty, so there is nothing to publish.");
+      return;
+    }
+    $("publish").disabled = true;
+    try {
+      const res = await fetch("/api/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text, name: "my-note.txt", content_type: "text/plain; charset=utf-8" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show($("publish-result"), "result--bad", "That did not work", data.detail || "The gateway refused it.");
+        return;
+      }
+      const extra = document.createElement("div");
+      extra.style.cssText = "margin-top:8px;display:flex;gap:14px;flex-wrap:wrap;align-items:center";
+      const path = "/ipfs/" + data.cid;
+      extra.appendChild(link(path, "Open it \u2192"));
+      const fingerprint = document.createElement("span");
+      fingerprint.className = "mono";
+      fingerprint.textContent = "fingerprint " + data.cid.slice(0, 20) + "\u2026";
+      extra.appendChild(fingerprint);
+      show($("publish-result"), "result--ok", "Published",
+           "Your note now has an address made from its own words. Share the link and anyone on this demo sees exactly this text.", extra);
+    } catch (err) {
+      show($("publish-result"), "result--bad", "That did not work", String(err.message || err));
+    } finally {
+      $("publish").disabled = false;
+    }
+  };
+
+  /* --- 3: report and watch the refusal --- */
+  let sampleCid = null;
+  fetch("/api/blocks")
+    .then((res) => res.json())
+    .then((data) => {
+      const sample = data.blocks.find((b) => b.name === "blocked-sample.txt");
+      if (sample) sampleCid = sample.cid;
+    })
+    .catch(() => {});
+
+  $("report").onclick = async () => {
+    if (!sampleCid) return;
+    $("report").disabled = true;
+    try {
+      const res = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cid: sampleCid, reason: "reported from the guided view" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show($("abuse-result"), "result--bad", "That did not work", data.detail || "The gateway refused it.");
+        return;
+      }
+      show($("abuse-result"), "result--note", "Report received",
+           "Reference " + data.receipt + ". The gateway reviewed it and stopped serving that page. It has not been deleted \u2014 only refused here.");
+      $("try-again").disabled = false;
+    } catch (err) {
+      show($("abuse-result"), "result--bad", "That did not work", String(err.message || err));
+    }
+  };
+
+  $("try-again").onclick = async () => {
+    if (!sampleCid) return;
+    const res = await fetch("/ipfs/" + sampleCid);
+    if (res.status === 410) {
+      show($("abuse-result"), "result--bad", "Refused \u2014 error 410",
+           "The gateway will not hand this page over any more. Your browser might still have an old copy saved; a private window shows the refusal straight away.");
+    } else if (res.ok) {
+      show($("abuse-result"), "result--ok", "Still available",
+           "The gateway served it, so it is not on the denylist.");
+    } else {
+      show($("abuse-result"), "result--note", "Unexpected answer",
+           "The gateway replied with " + res.status + ".");
+    }
+  };
+})();
+</script>
+</body>
+</html>
