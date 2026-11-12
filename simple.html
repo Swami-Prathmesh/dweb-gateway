@@ -145,11 +145,41 @@
     display: inline-block; font-family: var(--font-mono); font-size: 10.5px;
     padding: 2px 7px; border-radius: 4px; background: var(--primary-dim); color: var(--primary);
   }
+  /* ---------- tabs: one link, both views ---------- */
+  .tabs {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 22px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs__mark {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+    margin-right: auto; letter-spacing: .04em;
+  }
+  .tab {
+    font-size: 13px; padding: 6px 13px; border-radius: 7px;
+    border: 1px solid transparent; background: transparent; color: var(--text-dim);
+  }
+  .tab:hover { background: var(--surface-2); color: var(--text); }
+  .tab.is-active {
+    background: var(--primary-dim); color: var(--primary);
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  .panelview { height: calc(100dvh - 47px); }
+  .panelview iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--bg); }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="wrap">
+<nav class="tabs" role="tablist" aria-label="views">
+  <span class="tabs__mark">dweb-gateway</span>
+  <button class="tab is-active" data-view="guided" role="tab" aria-selected="true">Guided</button>
+  <button class="tab" data-view="technical" role="tab" aria-selected="false">Technical</button>
+</nav>
+
+<div class="wrap" id="view-guided">
 
   <header>
     <div class="kicker">a working demo &middot; nothing to install</div>
@@ -226,12 +256,43 @@
 
 </div>
 
+<div class="panelview" id="view-technical" hidden>
+  <iframe id="panel-frame" title="Technical panel"></iframe>
+</div>
+
 <script>
 (function () {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
   $("where").textContent = location.host;
+
+  /* one link, two views: the panel loads on first use so the guided page stays light */
+  const tabs = Array.from(document.querySelectorAll(".tab"));
+  const guided = $("view-guided");
+  const technical = $("view-technical");
+  const frame = $("panel-frame");
+
+  function showView(view) {
+    const isTechnical = view === "technical";
+    if (isTechnical && !frame.getAttribute("src")) frame.setAttribute("src", "/panel");
+    guided.hidden = isTechnical;
+    technical.hidden = !isTechnical;
+    tabs.forEach((tab) => {
+      const active = tab.dataset.view === view;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    if (isTechnical) window.scrollTo(0, 0);
+  }
+
+  tabs.forEach((tab) => {
+    tab.onclick = () => {
+      history.replaceState(null, "", tab.dataset.view === "technical" ? "#technical" : "#guided");
+      showView(tab.dataset.view);
+    };
+  });
+  if (location.hash === "#technical") showView("technical");
 
   function show(container, kind, title, body, extra) {
     const box = document.createElement("div");
