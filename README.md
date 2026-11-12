@@ -18,12 +18,16 @@ No arguments, no dependencies, no accounts, no network access.
 
 Requires Python 3.8+. Keep the files in one folder.
 
-Two views are served:
+One link, two views. `http://127.0.0.1:8787/` is the only address you need to share:
 
-- **`/` — guided view.** Plain language, three things to try, no identifiers on screen.
-  For anyone who just wants to see what this is.
-- **`/panel` — technical view.** CIDs, integrity state, denylist, tamper and repair.
-  For anyone who wants to take it apart.
+- **Guided tab** (the default). Plain language, three things to try, no identifiers on
+  screen. For anyone who just wants to see what this is.
+- **Technical tab.** CIDs, integrity state, denylist, tamper and repair. For anyone who
+  wants to take it apart.
+
+Switching tabs never leaves the page, and `/#technical` opens the technical tab directly if
+you want to send someone straight there. `/panel` still serves the panel on its own, for
+embedding or for a second window.
 
 ---
 
@@ -44,8 +48,9 @@ Two views are served:
 ## Endpoints
 
 ```
-GET  /                                  guided view (plain language)
-GET  /panel                             technical control panel
+GET  /                                  one page, both views (guided + technical tabs)
+GET  /#technical                        same page, technical tab open
+GET  /panel                             technical panel on its own
 GET  /README.md                         this file
 GET  /ipfs/<cid>[/<path>]               content by CID
 GET  /ipfs/<cid>?format=raw             raw block bytes (application/vnd.ipld.raw)
@@ -94,7 +99,7 @@ decline to serve an identifier, which is the authority a gateway actually has.
 ```
 start.py           launcher: free port, starts the server, opens the browser
 dweb_gateway.py    the server: CID math, block store, denylist, HTTP surface, seed content
-simple.html        guided view served at / (plain language, three things to try)
+simple.html        the single page at /: guided tab plus the technical tab
 webui.html         technical control panel served at /panel
 test_gateway.py    end-to-end suite, 56 checks, no dependencies
 run.sh / run.bat   one-line launchers for macOS-Linux and Windows
