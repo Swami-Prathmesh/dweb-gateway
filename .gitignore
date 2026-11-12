@@ -1,0 +1,5 @@
+store/
+.test_store/
+__pycache__/
+*.pyc
+*.png
